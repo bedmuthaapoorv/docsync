@@ -1,11 +1,11 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { parseAuthStatus, parseMcpList, readUser } from './account.js';
-import { claudeAuthStatus, claudeMcpList, claudeVersion } from './claude.js';
+import { parseAuthStatus, readUser } from './account.js';
+import { claudeAuthStatus, claudeVersion } from './claude.js';
 import { CONFIG_FILE, DEFAULTS, loadConfig } from './config.js';
 import { currentBranch, repoRoot } from './git.js';
 import { hookStatus, installHooks, uninstallHooks } from './hooks.js';
-import { CONNECTORS_URL, isInteractive, login, logout } from './login.js';
+import { CONNECTORS_URL, connectorStatus, isInteractive, login, logout } from './login.js';
 import { docUrl } from './prompt.js';
 import { dispatch, hasDoc, readDocId, stateFor, syncNow } from './sync.js';
 
@@ -96,7 +96,7 @@ async function doctor(cwd) {
     const auth = parseAuthStatus((await claudeAuthStatus()).stdout);
     check(auth.loggedIn, `signed in to Claude${auth.loggedIn ? ` as ${auth.email}` : ''}`, 'run "docsync login"');
 
-    const conn = parseMcpList((await claudeMcpList()).stdout);
+    const conn = await connectorStatus();
     check(conn.docs, 'Google Docs connector connected', `connect it at ${CONNECTORS_URL}`);
     check(conn.drive, 'Google Drive connector connected', `connect it at ${CONNECTORS_URL}`);
 

@@ -42,6 +42,17 @@ async function currentAuth() {
   return parseAuthStatus((await claudeAuthStatus()).stdout);
 }
 
+/** `claude mcp list` can briefly report a connector as missing, so look a few times before giving up. */
+export async function connectorStatus(attempts = 3, delayMs = 2000) {
+  let status = { docs: false, drive: false };
+  for (let i = 0; i < attempts; i++) {
+    status = parseMcpList((await claudeMcpList()).stdout);
+    if (status.docs && status.drive) break;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, delayMs));
+  }
+  return status;
+}
+
 async function probeOwner() {
   for (let i = 0; i < 2; i++) {
     const r = await runClaude(PROBE_PROMPT, { tools: PROBE_TOOLS, timeoutMs: 180_000 });
@@ -94,7 +105,7 @@ export async function login({ interactive = isInteractive() } = {}) {
   console.log(`Claude account: ${auth.email}`);
 
   // 2. Google connectors, authorized by the user in claude.ai
-  let conn = parseMcpList((await claudeMcpList()).stdout);
+  let conn = await connectorStatus();
   while (!(conn.docs && conn.drive)) {
     const missing = [!conn.docs && 'Google Docs', !conn.drive && 'Google Drive'].filter(Boolean).join(' and ');
     console.log(`\nNot connected yet: ${missing}.`);
@@ -103,7 +114,7 @@ export async function login({ interactive = isInteractive() } = {}) {
     openBrowser(CONNECTORS_URL);
     const a = await ask('Press Enter once connected (or type q to quit): ');
     if (a === 'q' || a === 'quit') return 1;
-    conn = parseMcpList((await claudeMcpList()).stdout);
+    conn = await connectorStatus();
   }
   console.log('Google Docs and Google Drive connectors: connected');
 

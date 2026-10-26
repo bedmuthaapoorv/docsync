@@ -6,7 +6,7 @@ Known document ID: ${docId || 'none'}
 Drive folder ID for new docs: ${folderId || 'none'}
 Mode: ${mode}
 
-1. Find the doc. Use the known ID if there is one. Otherwise search Google Drive for a Google Doc whose title is exactly the document title and use it if found. If none exists, create it with Drive create_file (contentMimeType text/html, the document title, parentId only when a folder ID is given) containing an h1 with the title and h2 sections: Purpose, Overview, Changelog.
+1. Find the doc. Use the known ID if there is one. Otherwise search Google Drive for a Google Doc whose title is exactly the document title and use it if found. If none exists, create it with Drive create_file (contentMimeType text/html, the document title, parentId only when a folder ID is given) containing an h1 with the title and h2 sections: Purpose, Overview, Changelog. Whenever you create the doc, fill Purpose and Overview from the context below (mark guesses in Purpose as assumptions) so no section is left empty, and in update mode also add this commit's Changelog entry.
 2. Mode update: read the doc with read_doc, then edit it in place with update_doc, always passing writeControl.requiredRevisionId from that read. If the revision check fails, read again and retry once. Add one entry at the top of the Changelog section for this commit: date, short hash, subject, then one to three sentences on what changed and why, and the files touched. Change Purpose or Overview only when this commit changes what they say.
 3. Mode create: only make sure the doc exists. Write Purpose from the branch name and recent commits and mark it as an assumption.
 
