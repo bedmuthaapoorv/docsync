@@ -1,6 +1,6 @@
 {
   "name": "@bedmuthaapoorv/docsync",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Keeps one Google Doc per git branch up to date on every commit, using the Claude CLI and its Google connectors.",
   "type": "module",
   "bin": {
