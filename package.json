@@ -1,5 +1,5 @@
 {
-  "name": "docsync",
+  "name": "@bedmuthaapoorv/docsync",
   "version": "0.1.0",
   "description": "Keeps one Google Doc per git branch up to date on every commit, using the Claude CLI and its Google connectors.",
   "type": "module",
@@ -13,6 +13,9 @@
   ],
   "scripts": {
     "test": "node --test"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "engines": {
     "node": ">=18"

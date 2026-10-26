@@ -26,8 +26,8 @@ The doc starts with Purpose, Overview and Changelog sections. Later commits add 
 ## Quick start
 
 ```bash
-# 1. Install (from GitHub; an npm release is not published yet)
-npm install -g github:bedmuthaapoorv/docsync
+# 1. Install (the command it provides is just "docsync")
+npm install -g @bedmuthaapoorv/docsync
 
 # 2. In any git repository
 cd your-repo
