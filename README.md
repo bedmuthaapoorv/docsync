@@ -16,14 +16,20 @@ Claude writes the summary from your commit. The doc is edited in place, so the l
 
 **You need**
 - [Node.js](https://nodejs.org) 18 or newer (check: `node --version`)
-- [Claude Code](https://claude.com/claude-code) installed (check: `claude --version`)
 - git (on Windows, [Git for Windows](https://git-scm.com/download/win))
+- The [Claude Code](https://claude.com/claude-code) CLI installed (check: `claude --version`)
+- Claude Code signed in to your Claude account. If you haven't yet, run `claude auth login` (check: `claude auth status` shows `"loggedIn": true`)
+- **Google Docs** and **Google Drive** connected to that Claude account, at [claude.ai/settings/connectors](https://claude.ai/settings/connectors)
+
+Connectors belong to your Claude account, not to your computer. On a new machine, sign in to Claude with the same account first, or docsync won't see them.
 
 **1. Install**
 
 ```bash
 npm install -g @bedmuthaapoorv/docsync
 ```
+
+On a Mac or Linux and see `EACCES: permission denied`? See [the fix below](#install-fails-with-eacces-permission-denied-mac-and-linux).
 
 **2. Turn it on in your repo**
 
@@ -87,11 +93,35 @@ Start with `docsync doctor`. It checks each requirement and tells you how to fix
 | What you see | What to do |
 |---|---|
 | `Run: docsync login` after a commit | This machine isn't signed in yet. Run `docsync login`. |
+| `docsync login` says Google Docs and Drive are not connected | First check that Claude itself is signed in on this machine: run `claude auth status`. If it says `"loggedIn": false`, run `claude auth login` with the Claude account that has the connectors, then run `docsync login` again. |
 | No doc after a commit | Wait a minute (it runs in the background), then run `docsync log`. A line with `FAILED` or `SKIPPED` explains why. |
 | "Access denied" when opening a doc | The doc belongs to a different Google account than the one you're signed in to in your browser. `docsync whoami` shows the owner account. For shared docs, see [Sharing docs with your team](#sharing-docs-with-your-team). |
 | `doctor` says a connector isn't connected | Connect Google Docs and Google Drive at [claude.ai/settings/connectors](https://claude.ai/settings/connectors) using your own Google account. |
 | You switched Claude accounts and syncs stopped | Run `docsync login` again so docsync records the new account. |
 | `doctor` says a hook is missing | Run `docsync init` again. If one of your own hooks calls `exit` before docsync's block, move docsync's block up. |
+
+### Install fails with `EACCES: permission denied` (Mac and Linux)
+
+If `npm install -g` ends with an error like this:
+
+```
+npm error code EACCES
+npm error syscall mkdir
+npm error path /usr/local/lib/node_modules/@bedmuthaapoorv
+npm error Error: EACCES: permission denied, mkdir '/usr/local/lib/node_modules/@bedmuthaapoorv'
+```
+
+npm is trying to write to a folder your user can't change. Don't use `sudo`. Give npm a folder in your home directory instead, then install again:
+
+```bash
+mkdir -p ~/.npm-global
+npm config set prefix ~/.npm-global
+echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+npm install -g @bedmuthaapoorv/docsync
+```
+
+If you use bash instead of zsh, replace `~/.zshrc` with `~/.bashrc` in the last two lines of the setup. Check with `docsync --version`.
 
 ## Sharing docs with your team
 
