@@ -28,9 +28,9 @@ export function parseAuthStatus(text) {
   try {
     const start = text.indexOf('{');
     const j = JSON.parse(text.slice(start, text.lastIndexOf('}') + 1));
-    return { loggedIn: Boolean(j.loggedIn), email: j.email ?? null };
+    return { loggedIn: Boolean(j.loggedIn), email: j.email ?? null, authMethod: j.authMethod ?? null };
   } catch {
-    return { loggedIn: false, email: null };
+    return { loggedIn: false, email: null, authMethod: null };
   }
 }
 
@@ -44,6 +44,26 @@ export function parseMcpList(text) {
         !/needs auth|failed|not configured|not connected/i.test(line),
     );
   return { docs: connected('Google Docs'), drive: connected('Google Drive') };
+}
+
+/** Explains why connectors might look missing, using what `claude mcp list` actually showed. */
+export function connectorHelp(auth, raw, url) {
+  const seen = raw
+    .split(/\r?\n/)
+    .filter((l) => /google/i.test(l))
+    .map((l) => `    ${l.trim()}`);
+  const lines = [
+    `  Claude is signed in as ${auth.email ?? 'unknown'}${auth.authMethod ? ` (sign-in method: ${auth.authMethod})` : ''}.`,
+    '  What "claude mcp list" shows for Google:',
+    ...(seen.length ? seen : ['    (no Google connectors listed)']),
+    `  Connectors belong to a Claude account, so connect them at ${url} while signed in to claude.ai as ${auth.email ?? 'this same account'}.`,
+  ];
+  if (auth.authMethod && auth.authMethod !== 'claude.ai') {
+    lines.push(
+      '  This sign-in method does not include claude.ai connectors. Run "claude auth logout", then "claude auth login" and sign in with your Claude.ai account.',
+    );
+  }
+  return lines.join('\n');
 }
 
 export function parseOwner(output) {

@@ -3,12 +3,32 @@ import { test } from 'node:test';
 import { renderTitle, slugify } from '../src/config.js';
 import { addBlock, hasBlock, removeBlock } from '../src/hooks.js';
 import { parseDocId } from '../src/prompt.js';
-import { parseAuthStatus, parseMcpList, parseOwner } from '../src/account.js';
+import { connectorHelp, parseAuthStatus, parseMcpList, parseOwner } from '../src/account.js';
 
 test('parseAuthStatus reads claude auth status JSON', () => {
-  assert.deepEqual(parseAuthStatus('{\n "loggedIn": true,\n "email": "a@b.com"\n}'), { loggedIn: true, email: 'a@b.com' });
-  assert.deepEqual(parseAuthStatus('{"loggedIn": false}'), { loggedIn: false, email: null });
-  assert.deepEqual(parseAuthStatus('garbage'), { loggedIn: false, email: null });
+  assert.deepEqual(parseAuthStatus('{\n "loggedIn": true,\n "authMethod": "claude.ai",\n "email": "a@b.com"\n}'), {
+    loggedIn: true,
+    email: 'a@b.com',
+    authMethod: 'claude.ai',
+  });
+  assert.deepEqual(parseAuthStatus('{"loggedIn": false}'), { loggedIn: false, email: null, authMethod: null });
+  assert.deepEqual(parseAuthStatus('garbage'), { loggedIn: false, email: null, authMethod: null });
+});
+
+test('connectorHelp shows what claude saw and which account owns connectors', () => {
+  const raw = 'claude.ai Google Calendar: https://x - ✔ Connected\nplugin:foo: https://y - ✔ Connected\n';
+  const out = connectorHelp({ email: 'a@b.com', authMethod: 'claude.ai' }, raw, 'https://claude.ai/settings/connectors');
+  assert.match(out, /signed in as a@b\.com/);
+  assert.match(out, /Google Calendar/);
+  assert.doesNotMatch(out, /plugin:foo/);
+  assert.match(out, /while signed in to claude\.ai as a@b\.com/);
+  assert.doesNotMatch(out, /does not include claude\.ai connectors/);
+});
+
+test('connectorHelp warns when the sign-in method has no claude.ai connectors', () => {
+  const out = connectorHelp({ email: null, authMethod: 'apiKey' }, '', 'https://claude.ai/settings/connectors');
+  assert.match(out, /no Google connectors listed/);
+  assert.match(out, /does not include claude\.ai connectors/);
 });
 
 test('parseMcpList requires both Google connectors to be connected', () => {

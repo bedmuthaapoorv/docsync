@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { parseAuthStatus, readUser } from './account.js';
+import { connectorHelp, parseAuthStatus, readUser } from './account.js';
 import { claudeAuthStatus, claudeVersion } from './claude.js';
 import { CONFIG_FILE, DEFAULTS, loadConfig } from './config.js';
 import { currentBranch, repoRoot } from './git.js';
@@ -99,6 +99,7 @@ async function doctor(cwd) {
     const conn = await connectorStatus();
     check(conn.docs, 'Google Docs connector connected', `connect it at ${CONNECTORS_URL}`);
     check(conn.drive, 'Google Drive connector connected', `connect it at ${CONNECTORS_URL}`);
+    if (!conn.docs || !conn.drive) console.log(connectorHelp(auth, conn.raw, CONNECTORS_URL));
 
     const user = readUser();
     check(Boolean(user), 'docsync set up on this machine', 'run "docsync login"');
@@ -146,6 +147,7 @@ export async function main(argv) {
   const cwd = process.cwd();
   const { positional, flags } = parseArgs(argv);
   const [cmd, ...rest] = positional;
+  if (flags.version || flags.v) return main(['version']);
 
   switch (cmd) {
     case 'login':
@@ -197,6 +199,9 @@ export async function main(argv) {
       console.log(lines.slice(-Number(flags.n ?? 10)).join('\n'));
       return 0;
     }
+    case 'version':
+      console.log(JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version);
+      return 0;
     case undefined:
     case 'help':
     case '--help':

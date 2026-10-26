@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import readline from 'node:readline/promises';
-import { clearUser, parseAuthStatus, parseMcpList, parseOwner, writeUser } from './account.js';
+import { clearUser, connectorHelp, parseAuthStatus, parseMcpList, parseOwner, writeUser } from './account.js';
 import { claudeAuthInteractive, claudeAuthStatus, claudeMcpList, claudeVersion, runClaude } from './claude.js';
 
 export const CONNECTORS_URL = 'https://claude.ai/settings/connectors';
@@ -44,11 +44,12 @@ async function currentAuth() {
 
 /** `claude mcp list` can briefly report a connector as missing, so look a few times before giving up. */
 export async function connectorStatus(attempts = 3, delayMs = 2000) {
-  let status = { docs: false, drive: false };
+  let status = { docs: false, drive: false, raw: '' };
   for (let i = 0; i < attempts; i++) {
-    status = parseMcpList((await claudeMcpList()).stdout);
+    const r = await claudeMcpList();
+    status = { ...parseMcpList(r.stdout), raw: r.stdout + r.stderr };
     if (status.docs && status.drive) break;
-    if (i < attempts - 1) await new Promise((r) => setTimeout(r, delayMs));
+    if (i < attempts - 1) await new Promise((r2) => setTimeout(r2, delayMs));
   }
   return status;
 }
@@ -109,7 +110,7 @@ export async function login({ interactive = isInteractive() } = {}) {
   while (!(conn.docs && conn.drive)) {
     const missing = [!conn.docs && 'Google Docs', !conn.drive && 'Google Drive'].filter(Boolean).join(' and ');
     console.log(`\nNot connected yet: ${missing}.`);
-    console.log(`Connect them with your own Google account at ${CONNECTORS_URL}`);
+    console.log(connectorHelp(auth, conn.raw, CONNECTORS_URL));
     if (!interactive) return 1;
     openBrowser(CONNECTORS_URL);
     const a = await ask('Press Enter once connected (or type q to quit): ');
